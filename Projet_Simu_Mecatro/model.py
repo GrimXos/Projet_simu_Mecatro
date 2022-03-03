@@ -1,4 +1,5 @@
 import sys
+from time import sleep
 import motor
 import math
 from constants import *
@@ -54,11 +55,11 @@ class Model(object):
             float -- Speed of motor1 (m/s), speech of motor2 (m/s)
         """
         # TODO
-        m1_speed = linear_speed + rotational_speed * (self.l/2)
-        m2_speed = linear_speed - rotational_speed * (self.l/2)
+        m1_speed = linear_speed - rotational_speed * (self.l/2)
+        m2_speed = linear_speed + rotational_speed * (self.l/2)
         return m1_speed, m2_speed
 
-    def dk(self, m1_speed=None, m2_speed=None):
+    def dk(self):
         """Given the speed of each of the 2 motors (m/s), 
         returns the linear speed (m/s) and rotational speed (rad/s) of a differential wheeled robot
         
@@ -70,8 +71,10 @@ class Model(object):
             float -- linear speed (m/s), rotational speed (rad/s)
         """
         # TODO
-        linear_speed = m1_speed + m2_speed
-        rotation_speed = (2*m1_speed)/L
+
+        linear_speed = (self.m1.speed + self.m2.speed)/2
+        rotation_speed = (self.m1.speed - self.m2.speed)/self.l
+
         return linear_speed, rotation_speed
 
     def update(self, dt):
@@ -86,10 +89,17 @@ class Model(object):
         linear_speed, rotation_speed = self.dk()
 
         # TODO
-        dxr = (linear_speed/rotation_speed)*math.sin(rotation_speed)
-        dyr = (linear_speed/rotation_speed)*(1-math.cos(rotation_speed))
+        dp = linear_speed * dt
+        dteta = rotation_speed * dt
+        if rotation_speed == 0 :
+            dxr = dp
+            dyr = 0
+        else :
+            dxr = (dp/dteta)*math.sin(dteta)
+            dyr = (dp/dteta)*(1-math.cos(dteta))
+
         # Updating the robot position
-        self.x = self.x + dxr * math.cos(rotation_speed)-dyr * math.sin(rotation_speed) # TODO
-        self.y = self.y + dxr * math.sin(rotation_speed) + dyr * math.cos( rotation_speed) #TODO  # TODO
+        self.x = self.x + dxr * math.cos(self.theta)- dyr * math.sin(rotation_speed*dt) # TODO
+        self.y = self.y + dxr * math.sin(self.theta) + dyr * math.cos( rotation_speed*dt) # TODO
         self.theta = self.theta + rotation_speed  # TODO
 
